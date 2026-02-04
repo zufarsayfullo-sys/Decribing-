@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigate Unit 4: Appearance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #9b59b6; --success: #2ecc71; --error: #e74c3c; --warning: #f1c40f; }
+        body { 
+            font-family: 'Poppins', sans-serif; margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                        url('https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover; background-position: center; color: white;
+        }
+        .quiz-container { 
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
+            padding: 40px; border-radius: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            width: 90%; max-width: 650px; text-align: center; border: 1px solid rgba(255,255,255,0.2);
+        }
+        .sentence-area { font-size: 1.3rem; margin-bottom: 30px; line-height: 1.5; min-height: 70px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .option-btn {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.3);
+            color: white; padding: 15px; border-radius: 12px; cursor: pointer; font-size: 1.1rem;
+            transition: all 0.2s; font-family: 'Poppins', sans-serif;
+        }
+        .option-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
+        .option-btn.correct { background: var(--success) !important; border-color: white; font-weight: bold; }
+        .option-btn.wrong { background: var(--error) !important; border-color: white; }
+        #progress-container { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 25px; display: flex; overflow: hidden; }
+        .progress-segment { height: 100%; flex-grow: 1; border-right: 1px solid rgba(0,0,0,0.2); }
+        .seg-correct { background: var(--success) !important; }
+        .seg-wrong { background: var(--error) !important; }
+        #next-btn { margin-top: 25px; padding: 18px 30px; background: var(--warning); color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; width: 100%; font-size: 1.2rem; text-transform: uppercase; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="start-screen">
+        <h2>Physical Appearance Quiz</h2>
+        <p>10 Random Questions from the full bank of 50</p>
+        <input type="text" id="student-name" placeholder="Full Name" style="padding:15px; width:100%; border-radius:10px; border:none; margin-bottom:20px; text-align:center; font-size:1.1rem; box-sizing:border-box; outline: none;">
+        <button onclick="startQuiz()" style="padding: 15px 40px; background:var(--primary); color:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer; width:100%;">Start Quiz</button>
+    </div>
+
+    <div id="main-quiz" class="hidden">
+        <div id="progress-container">
+            <div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div>
+            <div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div><div class="progress-segment"></div>
+        </div>
+        <div class="sentence-area" id="sentence-display"></div>
+        <div class="options-grid" id="options-display"></div>
+        <button id="next-btn" class="hidden" onclick="nextQuestion()">Next Question ⮕</button>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2 id="result-name"></h2>
+        <div id="score-display" style="font-size: 4rem; color: var(--warning); font-weight: bold; margin: 20px 0;"></div>
+        <button onclick="location.reload()" style="padding: 15px 40px; background:var(--primary); color:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer; width:100%;">New Attempt</button>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzjaoBxGbsuMNHNvenbb_3wAw1XKuGLHSFoSHbvT3NL0zAkFbWSppPQVyYLxjTxCJFp/exec";
+    
+    const fullBank = [
+        { s: "If you want to keep in good _______, it’s advisable to do some exercise.", ans: "shape", opts: ["shape", "elderly", "dyed", "stubble"] },
+        { s: "My father started losing his hair in his thirties and now he’s completely _______.", ans: "bald", opts: ["bald", "dyed", "curly", "slim"] },
+        { s: "Do you think Anya’s hair is _______? It used to be much lighter.", ans: "dyed", opts: ["dyed", "moustache", "shape", "twenties"] },
+        { s: "This dress is a bit tight and I’m not _______ enough to wear it.", ans: "slim", opts: ["slim", "shape", "grey", "well-built"] },
+        { s: "When Ahmet was a little boy, he always wanted to grow a _______ just like his dad!", ans: "moustache", opts: ["moustache", "bald", "fringe", "double chin"] },
+        { s: "The hairdresser in my village offers a discount for _______ people over seventy.", ans: "elderly", opts: ["elderly", "slim", "spiky", "well-built"] },
+        { s: "He has a very _______ chest from all the weightlifting he does.", ans: "well-built", opts: ["well-built", "slim", "elderly", "dyed"] },
+        { s: "Most people graduate from university while they are in their _______.", ans: "twenties", opts: ["twenties", "middle-aged", "elderly", "bald"] },
+        { s: "He hasn't shaved since Friday, so he has quite a lot of _______.", ans: "stubble", opts: ["stubble", "fringe", "long eyelashes", "shape"] },
+        { s: "My aunt is _______; she's 52 years old.", ans: "middle-aged", opts: ["middle-aged", "twenties", "elderly", "bald"] },
+        { s: "She decided to cut a _______ to cover her large forehead.", ans: "fringe", opts: ["fringe", "stubble", "moustache", "double chin"] },
+        { s: "His hair started turning _______ when he was only twenty-five.", ans: "grey", opts: ["grey", "dyed", "spiky", "slim"] },
+        { s: "Her hair isn't straight; it's naturally very _______.", ans: "curly", opts: ["curly", "stubble", "well-built", "shape"] },
+        { s: "If you don't watch your diet, you might develop a _______.", ans: "double chin", opts: ["double chin", "moustache", "fringe", "stubble"] },
+        { s: "He used gel to make his hair _______ and look like a rock star.", ans: "spiky", opts: ["spiky", "bald", "elderly", "curly"] },
+        { s: "She has very _______, which makes her look like a model.", ans: "long eyelashes", opts: ["long eyelashes", "stubble", "double chin", "bald"] },
+        { s: "The doctor said I am slightly _______ and need to lose five kilos.", ans: "overweight", opts: ["overweight", "slim", "well-built", "elderly"] },
+        { s: "He is _______ now, so he polishes the top of his head!", ans: "bald", opts: ["bald", "curly", "spiky", "dyed"] },
+        { s: "She is very _______ because she eats healthy food and runs marathons.", ans: "slim", opts: ["slim", "overweight", "middle-aged", "stubble"] },
+        { s: "My grandfather is _______ but he is still very active and swims daily.", ans: "elderly", opts: ["elderly", "twenties", "dyed", "spiky"] },
+        { s: "Does he have a _______ or a full beard?", ans: "moustache", opts: ["moustache", "fringe", "stubble", "shape"] },
+        { s: "I want to get my hair _______ bright red for the summer.", ans: "dyed", opts: ["dyed", "grey", "slim", "bald"] },
+        { s: "It's hard to stay in _______ when you work in an office all day.", ans: "shape", opts: ["shape", "fringe", "stubble", "middle-aged"] },
+        { s: "He's not fat, he's just _______; he has very broad shoulders.", ans: "well-built", opts: ["well-built", "slim", "double chin", "fringe"] },
+        { s: "He looks much younger than other _______ men I know.", ans: "middle-aged", opts: ["middle-aged", "twenties", "elderly", "stubble"] },
+        { s: "She has _______ hair that reaches her waist.", ans: "long", opts: ["long", "spiky", "bald", "moustache"] },
+        { s: "Is your hair naturally _______ or do you use a curling iron?", ans: "curly", opts: ["curly", "spiky", "slim", "grey"] },
+        { s: "He decided to grow a beard to hide his _______.", ans: "double chin", opts: ["double chin", "fringe", "long eyelashes", "shape"] },
+        { s: "She has beautiful, _______ hair that looks almost white.", ans: "blond", opts: ["blond", "dyed", "stubble", "well-built"] },
+        { s: "I can't believe he's in his _______; he looks much older.", ans: "twenties", opts: ["twenties", "middle-aged", "elderly", "bald"] },
+        { s: "He had a _______ cut into his hair that covered his eyebrows.", ans: "fringe", opts: ["fringe", "moustache", "stubble", "double chin"] },
+        { s: "His _______ makes him look a bit messy; he should shave.", ans: "stubble", opts: ["stubble", "clean-shaven", "dyed", "shape"] },
+        { s: "She is quite _______, so she always fits into small sizes.", ans: "slim", opts: ["slim", "overweight", "well-built", "elderly"] },
+        { s: "The _______ woman was helped across the street by a student.", ans: "elderly", opts: ["elderly", "twenties", "dyed", "spiky"] },
+        { s: "He is _______ at the front, but has hair at the back.", ans: "bald", opts: ["bald", "curly", "spiky", "dyed"] },
+        { s: "I think her hair is _______ because I saw her natural dark roots.", ans: "dyed", opts: ["dyed", "grey", "blond", "curly"] },
+        { s: "Going for a run every morning helps me keep in _______.", ans: "shape", opts: ["shape", "fringe", "stubble", "bald"] },
+        { s: "You look great! Have you lost weight? You look very _______.", ans: "slim", opts: ["slim", "well-built", "overweight", "middle-aged"] },
+        { s: "He has a thick _______ that he grooms every morning.", ans: "moustache", opts: ["moustache", "fringe", "stubble", "double chin"] },
+        { s: "My brother is very _______; he can lift heavy boxes easily.", ans: "well-built", opts: ["well-built", "slim", "elderly", "dyed"] },
+        { s: "She's worried about getting wrinkles now that she is _______.", ans: "middle-aged", opts: ["middle-aged", "twenties", "bald", "stubble"] },
+        { s: "I like your new _______; it really suits your face shape.", ans: "fringe", opts: ["fringe", "stubble", "moustache", "double chin"] },
+        { s: "He has some _______ on his face because his razor broke.", ans: "stubble", opts: ["stubble", "clean-shaven", "moustache", "long eyelashes"] },
+        { s: "Her hair turned _______ very early in life due to stress.", ans: "grey", opts: ["grey", "dyed", "blond", "spiky"] },
+        { s: "He has _______ hair that stands straight up.", ans: "spiky", opts: ["spiky", "curly", "long", "bald"] },
+        { s: "She has naturally long _______ that don't need mascara.", ans: "long eyelashes", opts: ["long eyelashes", "thick eyebrows", "stubble", "fringe"] },
+        { s: "The athlete's _______ body is the result of years of training.", ans: "well-built", opts: ["well-built", "overweight", "elderly", "bald"] },
+        { s: "We should respect the _______ for their wisdom and experience.", ans: "elderly", opts: ["elderly", "twenties", "middle-aged", "stubble"] },
+        { s: "He is _______ but his beard is still jet black.", ans: "bald", opts: ["bald", "curly", "spiky", "dyed"] },
+        { s: "Her hair is _______ today because she didn't brush it.", ans: "curly", opts: ["curly", "spiky", "slim", "grey"] }
+    ];
+
+    let currentQ = 0, score = 0, quizData = [], studentName = "", mistakes = [];
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(isCorrect) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        if (isCorrect) {
+            osc.frequency.setValueAtTime(523, audioCtx.currentTime); 
+            osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+    }
+
+    function startQuiz() {
+        studentName = document.getElementById('student-name').value.trim();
+        if (!studentName) return alert("Enter your name first!");
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('main-quiz').classList.remove('hidden');
+        quizData = fullBank.sort(() => 0.5 - Math.random()).slice(0, 10);
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const q = quizData[currentQ];
+        document.getElementById('sentence-display').innerText = q.s;
+        document.getElementById('next-btn').classList.add('hidden');
+        const display = document.getElementById('options-display');
+        display.innerHTML = "";
+        q.opts.sort(() => 0.5 - Math.random()).forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(btn, opt, q.ans);
+            display.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(btn, selected, correct) {
+        const buttons = document.querySelectorAll('.option-btn');
+        const segments = document.querySelectorAll('.progress-segment');
+        buttons.forEach(b => b.disabled = true);
+        if (selected === correct) {
+            score++;
+            btn.classList.add('correct');
+            segments[currentQ].classList.add('seg-correct');
+            playSound(true);
+        } else {
+            btn.classList.add('wrong');
+            buttons.forEach(b => { if(b.innerText === correct) b.classList.add('correct'); });
+            segments[currentQ].classList.add('seg-wrong');
+            mistakes.push(`Q${currentQ+1}: ${correct} (User chose: ${selected})`);
+            playSound(false);
+        }
+        document.getElementById('next-btn').classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+        currentQ++;
+        if (currentQ < 10) loadQuestion(); else finishQuiz();
+    }
+
+    function finishQuiz() {
+        const percent = (score / 10) * 100;
+        const payload = { 
+            name: studentName, 
+            score: score + " / 10", 
+            percentage: percent + "%", 
+            mistakes: mistakes.join(" // ") 
+        };
+        fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        document.getElementById('main-quiz').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('result-name').innerText = studentName;
+        document.getElementById('score-display').innerText = percent + "%";
+    }
+</script>
+</body>
+</html>
